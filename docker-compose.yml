@@ -1,0 +1,28 @@
+# After installing Docker Desktop, run the following command in the terminal to start the PostgreSQL database container:
+# docker compose up -d to run the database container in detached mode
+
+services:
+  db:
+    image: postgres:18
+    container_name: url-shortener-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: url_shortener
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - db_data:/var/lib/postgresql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
