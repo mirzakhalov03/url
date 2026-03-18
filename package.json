@@ -2,10 +2,14 @@
   "name": "cinema_server",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js"
+    "dev": "nodemon --watch . --ext ts,json --exec tsx server.ts",
+    "dev:ts": "nodemon --watch . --ext ts,json --exec tsx server.ts",
+    "typecheck": "tsc -p tsconfig.server.json --noEmit",
+    "build": "tsc -p tsconfig.server.json",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +21,11 @@
     "pg": "^8.20.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "@types/pg": "^8.18.0",
+    "nodemon": "^3.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
