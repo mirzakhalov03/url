@@ -15,6 +15,13 @@
       "when": 1774874512555,
       "tag": "0001_illegal_ronan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775029045337,
+      "tag": "0002_complete_puma",
+      "breakpoints": true
     }
   ]
 }
