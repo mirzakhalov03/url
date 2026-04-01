@@ -31,7 +31,7 @@ function App() {
         </h1>
 
         <p className="mt-6 max-w-3xl text-xl leading-relaxed text-indigo-950/65 dark:text-indigo-100/70 md:text-2xl">
-          Snip is the modern URL shortener for people who value speed, security, and aesthetics.
+          The modern URL shortener for people who value speed, security, and aesthetics.
           Create memorable links in seconds.
         </p>
 
@@ -56,7 +56,7 @@ function App() {
       </main>
 
       <footer className="relative z-10 border-t border-slate-200/70 py-7 text-center dark:border-white/10">
-        <p className="text-lg text-indigo-950/55 dark:text-indigo-100/55">© 2026 Snip. Built with precision.</p>
+        <p className="text-lg text-indigo-950/55 dark:text-indigo-100/55">© 2026 Shorten. Built with precision.</p>
       </footer>
 
       {isSignInOpen && (
