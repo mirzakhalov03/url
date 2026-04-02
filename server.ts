@@ -8,7 +8,6 @@ import dotenv from "dotenv";
 import session from "express-session";
 import loginRoutes from "./routes/login";
 import logoutRoutes from "./routes/logout";
-
 dotenv.config();
 const PORT = process.env.PORT || 3000;
 
