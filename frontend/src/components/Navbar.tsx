@@ -8,7 +8,7 @@ export const Navbar = ({ isDark, setIsDark, setIsSignInOpen }: { isDark: boolean
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/35">
               <Scissors size={16} />
             </div>
-            <span className="text-2xl font-semibold tracking-tight">Snip</span>
+            <span className="text-2xl font-semibold tracking-tight">Shorten</span>
           </div>
 
           <div className="flex items-center gap-3">
