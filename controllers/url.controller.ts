@@ -5,7 +5,7 @@ import { urls } from "../database/schema";
 import { eq, and } from "drizzle-orm";
 import { AuthRequest } from "../middleware/auth";
 
-export const createShortLink = async (req: AuthRequest, res: Response) => {
+export const createShortLink = async (req: Request, res: Response) => {
   try {
     const { original_link } = req.body;
     if (!original_link) {
@@ -16,7 +16,6 @@ export const createShortLink = async (req: AuthRequest, res: Response) => {
     const short_link = nanoid(8);
 
     const [link] = await db.insert(urls).values({
-      user_id: req.userId!,
       original_link,
       short_link,
     }).returning();
