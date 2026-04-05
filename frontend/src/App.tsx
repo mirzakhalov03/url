@@ -6,6 +6,7 @@ import { Navbar } from './components/Navbar'
 import { shortenUrl } from './api/services/url.service'
 import { API_BASE_URL } from './api/baseClient'
 
+const url = import.meta.env.VITE_API_URL;
 const THEME_STORAGE_KEY = 'theme'
 
 function App() {
@@ -16,6 +17,17 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [user, setUser] = useState<{ email: string; username?: string } | null>(null)
+
+  useEffect(() => {
+  fetch(`${url}/login/me`, { credentials: 'include', method: 'GET' })
+    .then(res => res.json())
+    .then(data => {
+      if (data.loggedIn) {
+        setUser(data.user)  
+      }
+    });
+}, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
@@ -24,10 +36,10 @@ function App() {
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#f3f4f8] text-slate-900 transition-colors duration-300 dark:bg-[#0d1020] dark:text-slate-100">
-      <div className="soft-glow soft-glow-left" />
-      <div className="soft-glow soft-glow-right" />
+      <div className="soft-glow soft-glow-left pointer-events-none" />
+      <div className="soft-glow soft-glow-right pointer-events-none" />
 
-      <Navbar isDark={isDark} setIsDark={setIsDark} setIsSignInOpen={setIsSignInOpen} />
+      <Navbar isDark={isDark} setIsDark={setIsDark} setIsSignInOpen={setIsSignInOpen} user={user} setUser={setUser} />
 
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center px-5 pb-8 pt-14 text-center md:px-8">
         <h1 className="max-w-5xl text-5xl font-extrabold leading-[0.95] tracking-[-0.03em] text-[#171732] md:text-7xl dark:text-white">
@@ -111,7 +123,7 @@ function App() {
       </footer>
 
       {isSignInOpen && (
-        <LoginModal setIsSignInOpen={setIsSignInOpen} />
+        <LoginModal setIsSignInOpen={setIsSignInOpen} setUser={setUser} />
       )}
     </div>
   )
