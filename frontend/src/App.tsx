@@ -65,7 +65,6 @@ function App() {
               try {
                 const data = await shortenUrl(url.trim())
                 setShortLink(`${API_BASE_URL}/${data.short_link}`)
-                setUrl('')
               } catch (err: any) {
                 setError(err.response?.data?.error || 'Something went wrong')
               } finally {
