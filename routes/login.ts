@@ -17,6 +17,16 @@ router.post('/', async (req: Request, res: Response) => {
     }
     req.session.user = existingUser;
     console.log(req.session.user);
-    res.json({ message: 'Login successful' });
+    res.json({ 
+        message: 'Login successful',
+        username: existingUser.full_name || existingUser.email 
+    });
+});
+router.get('/me', (req, res) => {
+  if (req.session.user) {
+    res.json({ loggedIn: true, user: { email: req.session.user.email, username: req.session.user.full_name } });
+  } else {
+    res.json({ loggedIn: false });
+  }
 });
 export default router;

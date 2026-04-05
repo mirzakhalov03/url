@@ -1,8 +1,42 @@
 import { Moon, Scissors, Sun } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 
-export const Navbar = ({ isDark, setIsDark, setIsSignInOpen }: { isDark: boolean; setIsDark: (isDark: boolean) => void; setIsSignInOpen: (isOpen: boolean) => void }) => {
+
+export const Navbar = ({ user, setUser, isDark, setIsDark, setIsSignInOpen }: { user: { email: string; username?: string } | null; setUser: (user: { email: string; username?: string } | null) => void; isDark: boolean; setIsDark: (isDark: boolean) => void; setIsSignInOpen: (isOpen: boolean) => void }) => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  async function onLogout() {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/logout`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (res.ok) {
+      setUser(null);       // remove user from frontend
+      setDropdownOpen(false); // close the dropdown if you have one
+    } else {
+      console.error('Logout failed');
+    }
+  } catch (err) {
+    console.error('Error logging out:', err);
+  }
+}
   return (
-    <header className="relative z-10 border-b border-slate-200/70 dark:border-white/10">
+    <header className="relative z-20 border-b border-slate-200/70 dark:border-white/10">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-3.5 md:px-8">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/35">
@@ -20,7 +54,27 @@ export const Navbar = ({ isDark, setIsDark, setIsSignInOpen }: { isDark: boolean
             >
               {isDark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
+             {user ? (
+            <div className="relative" ref={dropdownRef}>
+              <div
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="cursor-pointer rounded-full border border-slate-300/90 bg-white/70 px-5 py-1.5 text-base font-medium text-slate-900 backdrop-blur dark:border-white/15 dark:bg-white/10 dark:text-slate-100"
+              >
+                {user.username || user.email}
+              </div>
 
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-36 rounded-lg border border-slate-200/70 bg-white shadow-lg dark:border-white/15 dark:bg-[#0f1327] z-50">
+                  <button
+                    onClick={onLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-white/10"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
             <button
               type="button"
               onClick={() => setIsSignInOpen(true)}
@@ -28,7 +82,9 @@ export const Navbar = ({ isDark, setIsDark, setIsSignInOpen }: { isDark: boolean
             >
               Sign In
             </button>
+          )}
           </div>
+           
         </div>
       </header>
   );
