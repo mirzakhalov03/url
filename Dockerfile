@@ -37,7 +37,12 @@ RUN npm install --omit=dev
 
 COPY --from=backend-build /app/dist ./dist
 COPY --from=frontend-build /app/dist ./frontend/dist
+COPY drizzle.config.ts ./
+COPY database/ ./database/
+COPY drizzle/ ./drizzle/
+
+RUN npm install drizzle-kit tsx
 
 EXPOSE 3000
 
-CMD ["node", "dist/server.js"]
+CMD ["sh", "-c", "npx drizzle-kit push && node dist/server.js"]
