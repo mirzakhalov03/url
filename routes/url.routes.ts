@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createShortLink, getUserLinks, deleteLink } from "../controllers/url.controller";
-import { authenticate } from "../middleware/auth";
+import { authenticate, optionalAuthenticate } from "../middleware/auth";
 
 const router = Router();
 
@@ -10,9 +10,7 @@ const router = Router();
  *   post:
  *     tags:
  *       - URLs
- *     summary: Create a short link
- *     security:
- *       - bearerAuth: []
+ *     summary: Create a short link (works for guests and signed-in users)
  *     requestBody:
  *       required: true
  *       content:
@@ -28,7 +26,7 @@ const router = Router();
  *       201:
  *         description: Short link created
  */
-router.post("/", createShortLink);
+router.post("/", optionalAuthenticate, createShortLink);
 
 /**
  * @openapi
