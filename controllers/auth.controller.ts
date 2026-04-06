@@ -1,14 +1,20 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { randomUUID } from "crypto";
 import { db } from "../database";
 import { users, sessions } from "../database/schema";
 import { eq } from "drizzle-orm";
 import { AuthRequest } from "../middleware/auth";
+import { getErrorMessage, sendError } from "../services/error-response";
 
 const generateTokens = (userId: number) => {
   const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET!, { expiresIn: "15m" });
-  const refreshToken = jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET!, { expiresIn: "7d" });
+  const refreshToken = jwt.sign(
+    { userId, tokenId: randomUUID() },
+    process.env.JWT_REFRESH_SECRET!,
+    { expiresIn: "7d" }
+  );
   return { accessToken, refreshToken };
 };
 
@@ -16,13 +22,19 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { email, full_name, password } = req.body;
     if (!email || !full_name || !password) {
-      res.status(400).json({ error: "email, full_name, and password are required" });
+      sendError(res, 400, "Please provide email, full name, and password.", {
+        devMessage: "Missing one or more required fields: email, full_name, password",
+        code: "VALIDATION_ERROR",
+      });
       return;
     }
 
     const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
     if (existing) {
-      res.status(409).json({ error: "Email already registered" });
+      sendError(res, 409, "This email is already registered.", {
+        devMessage: `Duplicate email during registration: ${email}`,
+        code: "CONFLICT",
+      });
       return;
     }
 
@@ -58,7 +70,10 @@ export const register = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    sendError(res, 500, "Unable to create your account right now.", {
+      devMessage: getErrorMessage(err),
+      code: "INTERNAL_ERROR",
+    });
   }
 };
 
@@ -66,19 +81,28 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      res.status(400).json({ error: "email and password are required" });
+      sendError(res, 400, "Please provide both email and password.", {
+        devMessage: "Missing required fields: email and/or password",
+        code: "VALIDATION_ERROR",
+      });
       return;
     }
 
     const user = await db.query.users.findFirst({ where: eq(users.email, email) });
     if (!user) {
-      res.status(401).json({ error: "Invalid credentials" });
+      sendError(res, 401, "Invalid email or password.", {
+        devMessage: `Login failed: user not found for email ${email}`,
+        code: "AUTH_INVALID_CREDENTIALS",
+      });
       return;
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      res.status(401).json({ error: "Invalid credentials" });
+      sendError(res, 401, "Invalid email or password.", {
+        devMessage: `Login failed: invalid password for userId ${user.id}`,
+        code: "AUTH_INVALID_CREDENTIALS",
+      });
       return;
     }
 
@@ -103,7 +127,10 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    sendError(res, 500, "Unable to sign you in right now.", {
+      devMessage: getErrorMessage(err),
+      code: "INTERNAL_ERROR",
+    });
   }
 };
 
@@ -111,7 +138,10 @@ export const refresh = async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
-      res.status(400).json({ error: "refreshToken is required" });
+      sendError(res, 400, "Session token is required.", {
+        devMessage: "Missing refreshToken in request body",
+        code: "VALIDATION_ERROR",
+      });
       return;
     }
 
@@ -119,7 +149,10 @@ export const refresh = async (req: Request, res: Response) => {
     try {
       payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as { userId: number };
     } catch {
-      res.status(401).json({ error: "Invalid refresh token" });
+      sendError(res, 401, "Your session is invalid. Please sign in again.", {
+        devMessage: "JWT refresh token verification failed",
+        code: "AUTH_INVALID_REFRESH_TOKEN",
+      });
       return;
     }
 
@@ -127,7 +160,10 @@ export const refresh = async (req: Request, res: Response) => {
       where: eq(sessions.refresh_token, refreshToken),
     });
     if (!session || session.expires_at < new Date()) {
-      res.status(401).json({ error: "Session expired or not found" });
+      sendError(res, 401, "Your session has expired. Please sign in again.", {
+        devMessage: "Refresh session missing or expired",
+        code: "AUTH_SESSION_EXPIRED",
+      });
       return;
     }
 
@@ -154,7 +190,10 @@ export const refresh = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    sendError(res, 500, "Unable to refresh your session right now.", {
+      devMessage: getErrorMessage(err),
+      code: "INTERNAL_ERROR",
+    });
   }
 };
 
@@ -168,6 +207,48 @@ export const logout = async (req: AuthRequest, res: Response) => {
     res.json({ message: "Logged out" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    sendError(res, 500, "Unable to log out right now.", {
+      devMessage: getErrorMessage(err),
+      code: "INTERNAL_ERROR",
+    });
+  }
+};
+
+export const me = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      sendError(res, 401, "Please sign in to continue.", {
+        devMessage: "Missing req.userId in me endpoint",
+        code: "AUTH_UNAUTHORIZED",
+      });
+      return;
+    }
+
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+
+    if (!user) {
+      sendError(res, 404, "Account not found.", {
+        devMessage: `No user found for userId ${userId}`,
+        code: "NOT_FOUND",
+      });
+      return;
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    sendError(res, 500, "Unable to load your profile right now.", {
+      devMessage: getErrorMessage(err),
+      code: "INTERNAL_ERROR",
+    });
   }
 };

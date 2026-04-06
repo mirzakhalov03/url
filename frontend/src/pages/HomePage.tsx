@@ -4,11 +4,7 @@ import { toast } from "sonner";
 import { shortenUrl } from "../api/services/url.service";
 import { API_BASE_URL } from "../api/baseClient";
 
-export const HomePage = ({
-  user,
-}: {
-  user: { email: string; username?: string } | null;
-}) => {
+export const HomePage = () => {
   const [inputUrl, setInputUrl] = useState("");
   const [shortLink, setShortLink] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,14 +31,14 @@ export const HomePage = ({
         </div>
 
         <input
-          type="text"
+          type="url"
           value={inputUrl}
           onChange={(e) => {
             setInputUrl(e.target.value);
             setError("");
           }}
           placeholder="Paste your long URL here..."
-          className="h-9 flex-1 bg-transparent text-base text-slate-700 placeholder:text-slate-400 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
+          className="h-9 outline-none flex-1 bg-transparent text-base text-slate-700 placeholder:text-slate-400 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
         />
 
         <button
@@ -59,7 +55,6 @@ export const HomePage = ({
             } catch (err: any) {
               const msg = err.response?.data?.error || "Something went wrong";
               setError(msg);
-              toast.error(msg);
             } finally {
               setLoading(false);
             }

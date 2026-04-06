@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { register, login, refresh, logout } from "../controllers/auth.controller";
+import { register, login, refresh, logout, me } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth";
 
 const router = Router();
@@ -84,5 +84,20 @@ router.post("/refresh", refresh);
  *         description: Logout successful
  */
 router.post("/logout", authenticate, logout);
+
+/**
+ * @openapi
+ * /api/auth/me:
+ *   get:
+ *     tags:
+ *       - Auth
+ *     summary: Get current authenticated user
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user returned
+ */
+router.get("/me", authenticate, me);
 
 export default router;

@@ -6,7 +6,8 @@ import { LoginModal } from "./components/LoginModal";
 import { Navbar } from "./components/Navbar";
 import { HomePage } from "./pages/HomePage";
 import { ProfilePage } from "./pages/ProfilePage";
-import { API_BASE_URL } from "./api/baseClient";
+import { tokenStorage } from "./api/baseClient";
+import { getCurrentUser } from "./api/services/auth.service";
 
 const THEME_STORAGE_KEY = "theme";
 
@@ -18,21 +19,53 @@ function App() {
   const [user, setUser] = useState<{ email: string; username?: string } | null>(
     null,
   );
-
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/login/me`, { credentials: "include", method: "GET" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.loggedIn) {
-          setUser(data.user);
-        }
-      });
-  }, []);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
     localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
   }, [isDark]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const bootstrapAuth = async () => {
+      const hasStoredTokens = Boolean(
+        tokenStorage.getAccessToken() || tokenStorage.getRefreshToken(),
+      );
+
+      if (!hasStoredTokens) {
+        if (isMounted) {
+          setIsAuthLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const currentUser = await getCurrentUser();
+        if (isMounted) {
+          setUser({
+            email: currentUser.email,
+            username: currentUser.full_name ?? undefined,
+          });
+        }
+      } catch {
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsAuthLoading(false);
+        }
+      }
+    };
+
+    void bootstrapAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#f3f4f8] text-slate-900 transition-colors duration-300 dark:bg-[#0d1020] dark:text-slate-100">
@@ -45,10 +78,11 @@ function App() {
         setIsSignInOpen={setIsSignInOpen}
         user={user}
         setUser={setUser}
+        isAuthLoading={isAuthLoading}
       />
 
       <Routes>
-        <Route path="/" element={<HomePage user={user} />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/profile" element={<ProfilePage user={user} />} />
       </Routes>
 
@@ -62,7 +96,7 @@ function App() {
         <LoginModal setIsSignInOpen={setIsSignInOpen} setUser={setUser} />
       )}
 
-      <Toaster position="top-right" />
+      <Toaster position="top-center" />
     </div>
   );
 }

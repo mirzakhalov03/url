@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --watch . --ext ts,json --exec tsx server.ts",
+    "dev": "docker compose up -d && nodemon --watch . --ext ts,json --exec tsx server.ts",
     "dev:ts": "nodemon --watch . --ext ts,json --exec tsx server.ts",
     "typecheck": "tsc -p tsconfig.server.json --noEmit",
     "build": "tsc -p tsconfig.server.json",

@@ -1,58 +1,33 @@
 import { X } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
-const url = import.meta.env.VITE_API_URL;
+import { login, register } from "../api/services/auth.service"
 
 export const LoginModal = ({ setIsSignInOpen, setUser }: { setIsSignInOpen: (isOpen: boolean) => void; setUser: (user: { email: string; username?: string }) => void }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState<"login" | "auth">("login");
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [fullName, setFullName] = useState("");
 
 const submit = async () => {
-  const endpoint = mode === "login" ? "login" : "auth";
-  const body =
-    mode === "login"
-      ? { email, password }
-      : { full_name: fullName, email, password };
-
   try {
-    const res = await fetch(`${url}/${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      credentials: "include",
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      toast.error(data.message || "Auth failed");
-      return;
-    }
-
-    if (mode === "auth") {
-      const loginRes = await fetch(`${url}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        credentials: "include",
-      });
-      const loginData = await loginRes.json();
-      if (!loginRes.ok) {
-        toast.error(loginData.message || "Login after signup failed");
-        return;
-      }
-      setUser({ email, username: loginData.username || loginData.full_name });
+    if (mode === "register") {
+      const data = await register({ email, password, full_name: fullName });
+      setUser({ email: data.user.email, username: data.user.full_name ?? undefined });
       toast.success("Account created successfully!");
     } else {
-      setUser({ email, username: data.username || data.full_name });
+      const data = await login({ email, password });
+      setUser({ email: data.user.email, username: data.user.full_name ?? undefined });
       toast.success("Signed in successfully!");
     }
 
     setIsSignInOpen(false);
-  } catch (err) {
-    toast.error("Something went wrong. Please try again.");
+  } catch (err: unknown) {
+    const errorMessage = (err as { response?: { data?: { error?: string; message?: string } }; message?: string })?.response?.data?.error
+      || (err as { response?: { data?: { error?: string; message?: string } }; message?: string })?.response?.data?.message
+      || (err as { message?: string })?.message
+      || "Something went wrong. Please try again.";
+    toast.error(errorMessage);
   }
 };
   return (
@@ -92,7 +67,7 @@ const submit = async () => {
 
         {/* Form */}
         <div className="space-y-3">
-          {mode === "auth" && (
+          {mode === "register" && (
             <>
               <label
                 className="block text-sm font-medium text-slate-700 dark:text-slate-200"
@@ -146,15 +121,7 @@ const submit = async () => {
         <div className="mt-5 flex items-center justify-between gap-2.5">
           <button
             type="button"
-            onClick={() => setIsSignInOpen(false)}
-            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-white/15 dark:text-slate-200 dark:hover:bg-white/10"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="button"
-            className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:opacity-95"
+            className="rounded-xl mt-3 w-full bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:opacity-95"
             onClick={submit}
           >
             {mode === "login" ? "Sign In" : "Sign Up"}
@@ -168,7 +135,7 @@ const submit = async () => {
               <button
                 type="button"
                 className="font-medium text-indigo-600 hover:underline dark:text-indigo-400"
-                onClick={() => setMode("auth")}
+                onClick={() => setMode("register")}
               >
                 Sign Up
               </button>
